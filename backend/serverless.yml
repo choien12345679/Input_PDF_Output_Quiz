@@ -1,0 +1,153 @@
+service: quiz-app-backend
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-northeast-2
+  stage: ${opt:stage, 'dev'}
+  environment:
+    DYNAMODB_TABLE_PREFIX: quiz-app
+    S3_PDF_BUCKET: quiz-app-pdfs-961776040458
+    COGNITO_USER_POOL_ID: ap-northeast-2_MNJgyODDa
+    COGNITO_APP_CLIENT_ID: 3er31sli2jau96cc3onjorf8kd
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE_PREFIX}-*
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - arn:aws:s3:::${self:provider.environment.S3_PDF_BUCKET}/*
+
+functions:
+  authHandler:
+    handler: functions/auth/index.handler
+    events:
+      - http:
+          path: /auth/signup
+          method: POST
+          cors: true
+      - http:
+          path: /auth/signin
+          method: POST
+          cors: true
+      - http:
+          path: /auth/refresh
+          method: POST
+          cors: true
+
+  quizSetHandler:
+    handler: functions/quizSet/index.handler
+    events:
+      - http:
+          path: /quiz-sets
+          method: GET
+          cors: true
+      - http:
+          path: /quiz-sets
+          method: POST
+          cors: true
+      - http:
+          path: /quiz-sets/{id}
+          method: GET
+          cors: true
+      - http:
+          path: /quiz-sets/{id}
+          method: PUT
+          cors: true
+      - http:
+          path: /quiz-sets/{id}
+          method: DELETE
+          cors: true
+
+  questionHandler:
+    handler: functions/question/index.handler
+    events:
+      - http:
+          path: /quiz-sets/{id}/questions
+          method: GET
+          cors: true
+      - http:
+          path: /quiz-sets/{id}/questions
+          method: POST
+          cors: true
+      - http:
+          path: /quiz-sets/{id}/questions/{qid}
+          method: PUT
+          cors: true
+      - http:
+          path: /quiz-sets/{id}/questions/{qid}
+          method: DELETE
+          cors: true
+
+  pdfParserHandler:
+    handler: functions/pdfParser/index.handler
+    events:
+      - http:
+          path: /quiz-sets/upload-pdf
+          method: POST
+          cors: true
+      - http:
+          path: /quiz-sets/upload-pdf/{jobId}
+          method: GET
+          cors: true
+      - s3:
+          bucket: ${self:provider.environment.S3_PDF_BUCKET}
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: .pdf
+          existing: true
+
+  resultHandler:
+    handler: functions/result/index.handler
+    events:
+      - http:
+          path: /results
+          method: POST
+          cors: true
+      - http:
+          path: /results/me
+          method: GET
+          cors: true
+      - http:
+          path: /results/me/{quizSetId}
+          method: GET
+          cors: true
+
+  bookmarkHandler:
+    handler: functions/bookmark/index.handler
+    events:
+      - http:
+          path: /bookmarks/me
+          method: GET
+          cors: true
+      - http:
+          path: /bookmarks/{questionId}
+          method: POST
+          cors: true
+      - http:
+          path: /bookmarks/{questionId}
+          method: DELETE
+          cors: true
+
+plugins:
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    httpPort: 3000
+    lambdaPort: 3002

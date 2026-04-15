@@ -1,0 +1,10 @@
+export { default as HomePage } from "./HomePage";
+export { default as LoginPage } from "./LoginPage";
+export { default as SignupPage } from "./SignupPage";
+export { default as QuizPage } from "./QuizPage";
+export { default as PracticePage } from "./PracticePage";
+export { default as ResultPage } from "./ResultPage";
+export { default as DashboardPage } from "./DashboardPage";
+export { default as AdminPage } from "./AdminPage";
+export { default as AdminNewQuizPage } from "./AdminNewQuizPage";
+export { default as AdminEditQuizPage } from "./AdminEditQuizPage";
